@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>랜덤 추첨, 팀 빌딩</title>
+<style>
+  :root{
+    --bg:#0b0d16;
+    --bg-soft:#11142200;
+    --panel:#171b2c;
+    --panel-2:#1f2438;
+    --line:#2a3049;
+    --text:#f3f4f8;
+    --text-dim:#9aa0b8;
+    --pink:#ff4d7e;
+    --cyan:#4cc9f0;
+    --yellow:#ffd60a;
+    --purple:#8a6bff;
+    --green:#06d6a0;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background: radial-gradient(1200px 800px at 50% -10%, #1b2140 0%, #0b0d16 55%, #07080f 100%);
+    color:var(--text);
+    font-family:'Malgun Gothic','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+
+  header.top{
+    position:sticky; top:0; z-index:20;
+    background:rgba(10,12,20,0.85);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:16px 16px 12px;
+  }
+  .brand{
+    text-align:center;
+    font-size:1.3rem;
+    font-weight:800;
+    letter-spacing:0.5px;
+    margin:0 0 12px;
+    background:linear-gradient(90deg,var(--pink),var(--cyan));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  nav.tabs{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    flex-wrap:wrap;
+    max-width:720px;
+    margin:0 auto;
+  }
+  .nav-btn{
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--text-dim);
+    padding:10px 16px;
+    border-radius:999px;
+    font-size:0.92rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .nav-btn:hover{ color:var(--text); border-color:#3a4162; }
+  .nav-btn.active{
+    background:linear-gradient(90deg,var(--pink),var(--purple));
+    color:#fff;
+    border-color:transparent;
+    box-shadow:0 4px 14px rgba(255,77,126,.35);
+  }
+
+  main{
+    max-width:720px;
+    margin:0 auto;
+    padding:24px 16px 0;
+  }
+  .panel h2{
+    font-size:1.15rem;
+    margin:4px 0 4px;
+  }
+  .panel .sub{
+    color:var(--text-dim);
+    font-size:0.88rem;
+    margin:0 0 18px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    margin-bottom:18px;
+  }
+
+  /* 참가자 관리 */
+  .add-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .add-row input{
+    flex:1;
+    min-width:0;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text);
+    font-size:1rem;
+  }
+  .add-row input:focus{ outline:2px solid var(--cyan); }
+  .btn{
+    border:none;
+    cursor:pointer;
+    border-radius:12px;
+    font-weight:800;
+    font-size:0.98rem;
+    padding:12px 18px;
+    color:#fff;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    transition:transform .1s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+  .btn-primary{
+    background:linear-gradient(90deg,var(--pink),var(--purple));
+    box-shadow:0 6px 18px rgba(138,107,255,.35);
+    border:none;
+  }
+  .btn-primary:hover{ box-shadow:0 8px 22px rgba(138,107,255,.5); }
+  .btn-ghost{ background:transparent; }
+  .btn-wide{ width:100%; }
+
+  .count-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 14px;
+    font-weight:700;
+    font-size:0.85rem;
+    color:var(--cyan);
+    margin-bottom:14px;
+  }
+
+  ul.p-list{
+    list-style:none;
+    margin:0; padding:0;
+    max-height:320px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .participant-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+  }
+  .p-name{ font-weight:700; font-size:1rem; word-break:break-all; }
+  .p-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .icon-btn{
+    border:none;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:1rem;
+    width:34px; height:34px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .icon-btn:hover{ background:#2a3049; color:var(--text); }
+  .delete-btn:hover{ color:var(--pink); }
+  .empty-hint{
+    color:var(--text-dim);
+    text-align:center;
+    padding:24px 0;
+    font-size:0.92rem;
+  }
+
+  .hint{
+    text-align:center;
+    color:var(--yellow);
+    font-size:0.88rem;
+    min-height:1.2em;
+    margin:10px 0 0;
+  }
+
+  /* 돌림판 */
+  .wheel-stage{
+    position:relative;
+    width:min(86vw,420px);
+    margin:8px auto 10px;
+  }
+  .wheel-pointer{
+    position:absolute;
+    top:-4px;
+    left:50%;
+    transform:translateX(-50%);
+    width:0; height:0;
+    border-left:15px solid transparent;
+    border-right:15px solid transparent;
+    border-top:26px solid var(--yellow);
+    z-index:5;
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));
+  }
+  .wheel-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    overflow:hidden;
+    box-shadow:0 0 0 8px #0c0e18, 0 0 0 10px var(--line), 0 14px 40px rgba(0,0,0,.55);
+    transition:transform 4.2s cubic-bezier(.11,.78,.2,1);
+    will-change:transform;
+  }
+  .wheel-wrap canvas{ width:100%; height:100%; display:block; }
+
+  .wheel-result{
+    text-align:center;
+    margin:14px 0 6px;
+  }
+  .wheel-result .label{
+    color:var(--text-dim);
+    font-size:0.9rem;
+    margin-bottom:4px;
+  }
+  .wheel-result h2{
+    font-size:2.1rem;
+    margin:0;
+    font-weight:900;
+    background:linear-gradient(90deg,var(--yellow),var(--pink));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    animation:pop .4s ease;
+  }
+  @keyframes pop{
+    0%{ transform:scale(.6); opacity:0; }
+    60%{ transform:scale(1.12); opacity:1; }
+    100%{ transform:scale(1); }
+  }
+  .wheel-controls{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+
+  /* 팀 편성 */
+  .team-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:14px;
+    margin:18px 0;
+  }
+  .team-card{
+    position:relative;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-top:4px solid var(--accent, var(--cyan));
+    border-radius:14px;
+    padding:14px;
+    opacity:0;
+    transform:translateY(14px) scale(.96);
+    transition:opacity .4s ease, transform .4s ease;
+  }
+  .team-card.show{ opacity:1; transform:none; }
+  .team-card h3{
+    margin:0 0 10px;
+    font-size:1rem;
+    color:var(--accent, var(--cyan));
+  }
+  .team-card ul{
+    list-style:none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .team-card li{
+    font-weight:700;
+    font-size:1.02rem;
+    background:var(--panel);
+    border-radius:8px;
+    padding:8px 10px;
+  }
+  .order-badge{
+    position:absolute;
+    top:-12px;
+    right:-10px;
+    background:linear-gradient(135deg,var(--yellow),var(--pink));
+    color:#10121f;
+    font-size:0.78rem;
+    font-weight:900;
+    padding:5px 10px;
+    border-radius:999px;
+    box-shadow:0 4px 10px rgba(0,0,0,.4);
+    white-space:nowrap;
+  }
+  .order-summary{
+    text-align:center;
+    font-weight:800;
+    font-size:1.02rem;
+    line-height:1.6;
+    color:var(--text);
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin:0 0 16px;
+  }
+  .team-actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  #confettiCanvas{
+    position:fixed;
+    inset:0;
+    z-index:999;
+    pointer-events:none;
+  }
+
+  @media (max-width:420px){
+    .brand{ font-size:1.1rem; }
+    .nav-btn{ padding:9px 12px; font-size:0.85rem; }
+    .wheel-result h2{ font-size:1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <p class="brand">🎉 랜덤 추첨, 팀 빌딩</p>
+  <nav class="tabs">
+    <button type="button" class="nav-btn active" data-tab="participants">참가자 관리</button>
+    <button type="button" class="nav-btn" data-tab="wheel">개인 돌림판</button>
+    <button type="button" class="nav-btn" data-tab="team2">2명씩 팀</button>
+    <button type="button" class="nav-btn" data-tab="team4">4명씩 팀</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- 참가자 관리 -->
+  <section class="panel" id="panel-participants">
+    <h2>참가자 관리</h2>
+    <p class="sub">모든 게임에서 공유되는 참가자 명단입니다. 여기서 등록한 이름이 돌림판과 팀 편성에 그대로 사용됩니다.</p>
+    <div class="card">
+      <form id="addForm" class="add-row">
+        <input type="text" id="nameInput" placeholder="이름을 입력하세요" maxlength="20" autocomplete="off">
+        <button type="submit" class="btn btn-primary">추가</button>
+      </form>
+      <div class="count-badge">등록 인원 <span data-participant-count>0</span>명</div>
+      <ul class="p-list" id="participantList"></ul>
+    </div>
+  </section>
+
+  <!-- 개인 돌림판 -->
+  <section class="panel" id="panel-wheel" hidden>
+    <h2>개인 돌림판</h2>
+    <p class="sub">참가자 전체를 대상으로 한 명을 랜덤 추첨합니다.</p>
+    <div class="card">
+      <div class="count-badge">참가자 <span data-participant-count>0</span>명</div>
+      <div class="wheel-stage">
+        <div class="wheel-pointer"></div>
+        <div class="wheel-wrap" id="wheelWrap">
+          <canvas id="wheelCanvas" width="800" height="800"></canvas>
+        </div>
+      </div>
+      <div class="wheel-result" id="wheelResult" hidden>
+        <p class="label">🎊 당첨자 🎊</p>
+        <h2 id="wheelWinnerName"></h2>
+      </div>
+      <div class="wheel-controls">
+        <button type="button" class="btn" id="btnShuffleOrder">🔀 랜덤 배치</button>
+        <button type="button" class="btn btn-primary" id="btnSpin">🎲 돌리기</button>
+      </div>
+      <p class="hint" id="wheelMessage"></p>
+    </div>
+  </section>
+
+  <!-- 2명씩 팀 -->
+  <section class="panel" id="panel-team2" hidden>
+    <h2>2명씩 팀 편성</h2>
+    <p class="sub">참가자 수가 2의 배수일 때, 2명씩 팀으로 무작위 편성합니다.</p>
+    <div class="card">
+      <div class="count-badge">참가자 <span data-participant-count>0</span>명</div>
+      <button type="button" class="btn btn-primary btn-wide" id="btnDraw-team2">🎯 팀 뽑기</button>
+      <p class="hint" id="msg-team2"></p>
+      <div class="team-grid" id="teamResults-team2" hidden></div>
+      <p class="order-summary" id="orderSummary-team2" hidden></p>
+      <div class="team-actions" id="teamActions-team2" hidden>
+        <button type="button" class="btn" id="btnOrder-team2">🔢 진행 순서 뽑기</button>
+        <button type="button" class="btn btn-wide" id="btnRedraw-team2">🔄 팀 다시 뽑기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4명씩 팀 -->
+  <section class="panel" id="panel-team4" hidden>
+    <h2>4명씩 팀 편성</h2>
+    <p class="sub">참가자 수가 4의 배수일 때, 4명씩 팀으로 무작위 편성합니다.</p>
+    <div class="card">
+      <div class="count-badge">참가자 <span data-participant-count>0</span>명</div>
+      <button type="button" class="btn btn-primary btn-wide" id="btnDraw-team4">🎯 팀 뽑기</button>
+      <p class="hint" id="msg-team4"></p>
+      <div class="team-grid" id="teamResults-team4" hidden></div>
+      <p class="order-summary" id="orderSummary-team4" hidden></p>
+      <div class="team-actions" id="teamActions-team4" hidden>
+        <button type="button" class="btn" id="btnOrder-team4">🔢 진행 순서 뽑기</button>
+        <button type="button" class="btn btn-wide" id="btnRedraw-team4">🔄 팀 다시 뽑기</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<canvas id="confettiCanvas" hidden></canvas>
+
+<script>
+(function(){
+  "use strict";
+
+  var PALETTE = ['#ff4d7e','#4cc9f0','#ffd60a','#8a6bff','#06d6a0','#ff8c42','#f72585','#4895ef','#80ed99','#f9c74f'];
+  var STORAGE_KEY = 'teamBuildParticipants_v1';
+
+  var participants = [];
+  var wheelOrder = [];
+  var wheelRotation = 0;
+  var spinning = false;
+  var teamResults = { team2: null, team4: null };
+  var teamOrder = { team2: null, team4: null };
+  var GROUP_SIZE = { team2: 2, team4: 4 };
+
+  /* ---------- 저장/불러오기 ---------- */
+  function loadParticipants(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var arr = JSON.parse(raw);
+        if(Array.isArray(arr)){
+          participants = arr.filter(function(x){ return typeof x === 'string' && x.trim().length > 0; });
+        }
+      }
+    }catch(e){ /* storage 사용 불가 시 무시 */ }
+  }
+  function saveParticipants(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(participants)); }catch(e){}
+  }
+
+  /* ---------- 유틸 ---------- */
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+  function truncateName(name){
+    return name.length > 10 ? name.slice(0,9) + '…' : name;
+  }
+  function shuffleArray(arr){
+    for(var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i+1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  /* ---------- 참가자 관리 ---------- */
+  var listEl = document.getElementById('participantList');
+
+  function renderParticipants(){
+    var countEls = document.querySelectorAll('[data-participant-count]');
+    for(var i=0;i<countEls.length;i++){ countEls[i].textContent = participants.length; }
+
+    if(participants.length === 0){
+      listEl.innerHTML = '<li class="empty-hint">등록된 참가자가 없습니다. 위에서 이름을 추가해주세요.</li>';
+    }else{
+      listEl.innerHTML = participants.map(function(name, idx){
+        return '<li class="participant-row" data-index="'+idx+'">' +
+          '<span class="p-name">'+escapeHtml(name)+'</span>' +
+          '<span class="p-actions">' +
+            '<button type="button" class="icon-btn edit-btn" data-action="edit" data-index="'+idx+'" aria-label="수정">✏️</button>' +
+            '<button type="button" class="icon-btn delete-btn" data-action="delete" data-index="'+idx+'" aria-label="삭제">✕</button>' +
+          '</span>' +
+        '</li>';
+      }).join('');
+    }
+    updateGameAvailability();
+  }
+
+  document.getElementById('addForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var input = document.getElementById('nameInput');
+    var name = input.value.trim();
+    if(!name) return;
+    participants.push(name);
+    input.value = '';
+    input.focus();
+    saveParticipants();
+    renderParticipants();
+    invalidateResults();
+  });
+
+  listEl.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    var idx = parseInt(btn.dataset.index, 10);
+    var action = btn.dataset.action;
+    if(action === 'edit'){
+      var current = participants[idx];
+      var next = window.prompt('참가자 이름 수정', current);
+      if(next !== null){
+        var trimmed = next.trim();
+        if(trimmed){
+          participants[idx] = trimmed;
+          saveParticipants();
+          renderParticipants();
+          invalidateResults();
+        }
+      }
+    }else if(action === 'delete'){
+      var target = participants[idx];
+      if(window.confirm('\''+target+'\' 님을 명단에서 삭제할까요?')){
+        participants.splice(idx, 1);
+        saveParticipants();
+        renderParticipants();
+        invalidateResults();
+      }
+    }
+  });
+
+  function invalidateResults(){
+    wheelOrder = participants.slice();
+    wheelRotation = 0;
+    document.getElementById('wheelWrap').style.transition = 'none';
+    document.getElementById('wheelWrap').style.transform = 'rotate(0deg)';
+    requestAnimationFrame(function(){
+      document.getElementById('wheelWrap').style.transition = '';
+    });
+    hideWheelResult();
+    document.getElementById('btnSpin').textContent = '🎲 돌리기';
+    drawWheel(wheelOrder);
+    clearTeamResults('team2');
+    clearTeamResults('team4');
+  }
+
+  /* ---------- 탭 전환 ---------- */
+  var tabButtons = document.querySelectorAll('.nav-btn');
+  var panels = document.querySelectorAll('.panel');
+  tabButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabButtons.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var target = btn.dataset.tab;
+      panels.forEach(function(p){ p.hidden = (p.id !== 'panel-' + target); });
+      if(target === 'wheel'){ drawWheel(wheelOrder); }
+    });
+  });
+
+  /* ---------- 돌림판 ---------- */
+  function drawWheel(names){
+    var canvas = document.getElementById('wheelCanvas');
+    var ctx = canvas.getContext('2d');
+    var size = canvas.width;
+    var cx = size/2, cy = size/2, r = size/2 - 6;
+    ctx.clearRect(0,0,size,size);
+
+    var n = names.length;
+    if(n === 0){
+      ctx.beginPath();
+      ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.fillStyle = '#1c2138';
+      ctx.fill();
+      ctx.fillStyle = '#9aa0b8';
+      ctx.font = '28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('참가자를 등록해주세요', cx, cy);
+      return;
+    }
+
+    var slice = (Math.PI*2) / n;
+    for(var i=0;i<n;i++){
+      var start = i*slice - Math.PI/2;
+      var end = start + slice;
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,start,end);
+      ctx.closePath();
+      ctx.fillStyle = PALETTE[i % PALETTE.length];
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(10,12,20,0.7)';
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.rotate(start + slice/2);
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#10121f';
+      var fontSize = Math.max(16, Math.min(30, 420/n));
+      ctx.font = 'bold ' + fontSize + 'px "Malgun Gothic", sans-serif';
+      ctx.fillText(truncateName(names[i]), r - 24, 0);
+      ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.arc(cx,cy,r*0.12,0,Math.PI*2);
+    ctx.fillStyle = '#10121f';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#2a3049';
+    ctx.stroke();
+  }
+
+  function hideWheelResult(){
+    document.getElementById('wheelResult').hidden = true;
+  }
+  function showWheelResult(name){
+    document.getElementById('wheelWinnerName').textContent = name;
+    document.getElementById('wheelResult').hidden = false;
+  }
+
+  function spinWheel(){
+    if(spinning) return;
+    if(wheelOrder.length === 0) return;
+    spinning = true;
+    var spinBtn = document.getElementById('btnSpin');
+    var shuffleBtn = document.getElementById('btnShuffleOrder');
+    spinBtn.disabled = true;
+    shuffleBtn.disabled = true;
+    hideWheelResult();
+
+    var order = wheelOrder.slice();
+    var n = order.length;
+    var winnerIndex = Math.floor(Math.random() * n);
+    var winnerName = order[winnerIndex];
+
+    var sliceDeg = 360 / n;
+    var winnerCenterDeg = winnerIndex * sliceDeg + sliceDeg/2;
+    var desiredMod = (360 - winnerCenterDeg) % 360;
+    var jitterRange = Math.min(sliceDeg * 0.35, 12);
+    desiredMod = (desiredMod + (Math.random()*2 - 1) * jitterRange + 360) % 360;
+
+    var extraSpins = 6 + Math.floor(Math.random() * 3);
+    var currentMod = ((wheelRotation % 360) + 360) % 360;
+    var delta = ((desiredMod - currentMod) + 360) % 360;
+    wheelRotation += extraSpins * 360 + delta;
+
+    var wrap = document.getElementById('wheelWrap');
+    wrap.style.transform = 'rotate(' + wheelRotation + 'deg)';
+
+    function onEnd(e){
+      if(e.propertyName !== 'transform') return;
+      wrap.removeEventListener('transitionend', onEnd);
+      spinning = false;
+      shuffleBtn.disabled = false;
+      spinBtn.disabled = false;
+      spinBtn.textContent = '🔄 다시 뽑기';
+      showWheelResult(winnerName);
+      launchConfetti();
+    }
+    wrap.addEventListener('transitionend', onEnd);
+  }
+
+  document.getElementById('btnSpin').addEventListener('click', spinWheel);
+  document.getElementById('btnShuffleOrder').addEventListener('click', function(){
+    if(spinning) return;
+    shuffleArray(wheelOrder);
+    drawWheel(wheelOrder);
+    hideWheelResult();
+  });
+
+  /* ---------- 팀 편성 ---------- */
+  function drawTeams(key, groupSize){
+    var n = participants.length;
+    if(n === 0 || n % groupSize !== 0) return;
+    var shuffled = shuffleArray(participants.slice());
+    var teams = [];
+    for(var i=0;i<shuffled.length;i+=groupSize){
+      teams.push(shuffled.slice(i, i+groupSize));
+    }
+    teamResults[key] = teams;
+    teamOrder[key] = null;
+    renderTeams(key, teams);
+  }
+
+  function renderTeams(key, teams){
+    var container = document.getElementById('teamResults-' + key);
+    container.hidden = false;
+    container.innerHTML = teams.map(function(members, i){
+      var color = PALETTE[i % PALETTE.length];
+      var items = members.map(function(m){ return '<li>'+escapeHtml(m)+'</li>'; }).join('');
+      return '<div class="team-card" style="--accent:'+color+'">' +
+        '<h3>팀 '+(i+1)+'</h3>' +
+        '<ul>'+items+'</ul>' +
+      '</div>';
+    }).join('');
+
+    requestAnimationFrame(function(){
+      var cards = container.querySelectorAll('.team-card');
+      cards.forEach(function(card, i){
+        card.style.transitionDelay = (i * 90) + 'ms';
+        requestAnimationFrame(function(){ card.classList.add('show'); });
+      });
+    });
+
+    var orderSummary = document.getElementById('orderSummary-' + key);
+    orderSummary.hidden = true;
+    orderSummary.textContent = '';
+    var orderBtn = document.getElementById('btnOrder-' + key);
+    orderBtn.textContent = '🔢 진행 순서 뽑기';
+    document.getElementById('teamActions-' + key).hidden = false;
+  }
+
+  function clearTeamResults(key){
+    teamResults[key] = null;
+    teamOrder[key] = null;
+    var container = document.getElementById('teamResults-' + key);
+    container.innerHTML = '';
+    container.hidden = true;
+    document.getElementById('orderSummary-' + key).hidden = true;
+    document.getElementById('teamActions-' + key).hidden = true;
+  }
+
+  function drawOrder(key){
+    var teams = teamResults[key];
+    if(!teams) return;
+    var order = shuffleArray(teams.map(function(_, i){ return i; }));
+    teamOrder[key] = order;
+
+    var container = document.getElementById('teamResults-' + key);
+    var cards = Array.prototype.slice.call(container.querySelectorAll('.team-card'));
+    if(cards.length === 0) return;
+
+    /* FLIP 애니메이션: 이동 전 위치(First) 기록 */
+    var firstRects = cards.map(function(card){ return card.getBoundingClientRect(); });
+
+    order.forEach(function(teamIdx, pos){
+      var card = cards[teamIdx];
+      var badge = card.querySelector('.order-badge');
+      if(!badge){
+        badge = document.createElement('span');
+        badge.className = 'order-badge';
+        card.appendChild(badge);
+      }
+      badge.textContent = (pos + 1) + '번째 진행';
+      container.appendChild(card);
+    });
+
+    /* 이동 후 위치(Last) 기록 */
+    var lastRects = cards.map(function(card){ return card.getBoundingClientRect(); });
+
+    /* 이동 거리만큼 역보정(Invert) 후 트랜지션으로 원위치(Play) */
+    cards.forEach(function(card, i){
+      var dx = firstRects[i].left - lastRects[i].left;
+      var dy = firstRects[i].top - lastRects[i].top;
+      card.style.transition = 'none';
+      card.style.transform = (dx || dy) ? ('translate(' + dx + 'px, ' + dy + 'px)') : '';
+    });
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        cards.forEach(function(card){
+          card.style.transition = 'transform 0.55s cubic-bezier(.22,.8,.2,1)';
+          card.style.transform = '';
+        });
+      });
+    });
+
+    window.setTimeout(function(){
+      cards.forEach(function(card){ card.style.transition = ''; });
+    }, 650);
+
+    var summaryText = '🔢 진행 순서 : ' + order.map(function(i){ return '팀 ' + (i+1); }).join('  ➜  ');
+    var summaryEl = document.getElementById('orderSummary-' + key);
+    summaryEl.textContent = summaryText;
+    summaryEl.hidden = false;
+
+    document.getElementById('btnOrder-' + key).textContent = '🔄 순서 다시 뽑기';
+  }
+
+  document.getElementById('btnDraw-team2').addEventListener('click', function(){ drawTeams('team2', GROUP_SIZE.team2); });
+  document.getElementById('btnRedraw-team2').addEventListener('click', function(){ drawTeams('team2', GROUP_SIZE.team2); });
+  document.getElementById('btnOrder-team2').addEventListener('click', function(){ drawOrder('team2'); });
+  document.getElementById('btnDraw-team4').addEventListener('click', function(){ drawTeams('team4', GROUP_SIZE.team4); });
+  document.getElementById('btnRedraw-team4').addEventListener('click', function(){ drawTeams('team4', GROUP_SIZE.team4); });
+  document.getElementById('btnOrder-team4').addEventListener('click', function(){ drawOrder('team4'); });
+
+  /* ---------- 게임 가능 여부 ---------- */
+  function updateGameAvailability(){
+    var n = participants.length;
+
+    var spinBtn = document.getElementById('btnSpin');
+    var wheelMsg = document.getElementById('wheelMessage');
+    if(n === 0){
+      spinBtn.disabled = true;
+      wheelMsg.textContent = '참가자를 먼저 등록해주세요.';
+    }else{
+      spinBtn.disabled = spinning;
+      wheelMsg.textContent = '';
+    }
+
+    ['team2','team4'].forEach(function(key){
+      var groupSize = GROUP_SIZE[key];
+      var drawBtn = document.getElementById('btnDraw-' + key);
+      var msg = document.getElementById('msg-' + key);
+      if(n === 0 || n % groupSize !== 0){
+        drawBtn.disabled = true;
+        msg.textContent = '⚠️ 이 게임은 참가자 수가 ' + groupSize + '의 배수일 때 진행할 수 있습니다. (현재 인원: ' + n + '명)';
+      }else{
+        drawBtn.disabled = false;
+        msg.textContent = '총 ' + (n / groupSize) + '개 팀으로 편성됩니다.';
+      }
+    });
+  }
+
+  /* ---------- 컨페티 ---------- */
+  function launchConfetti(){
+    var canvas = document.getElementById('confettiCanvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.hidden = false;
+    var ctx = canvas.getContext('2d');
+
+    var particles = [];
+    for(var i=0;i<140;i++){
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * canvas.height * 0.3,
+        vx: (Math.random() - 0.5) * 3,
+        vy: 2 + Math.random() * 3,
+        size: 6 + Math.random() * 6,
+        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+        rotation: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 0.3
+      });
+    }
+
+    var start = performance.now();
+    function frame(now){
+      var elapsed = now - start;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      particles.forEach(function(p){
+        p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.rotation += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+        ctx.restore();
+      });
+      if(elapsed < 2600){
+        requestAnimationFrame(frame);
+      }else{
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        canvas.hidden = true;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', function(){
+    if(!document.getElementById('confettiCanvas').hidden){
+      var c = document.getElementById('confettiCanvas');
+      c.width = window.innerWidth;
+      c.height = window.innerHeight;
+    }
+  });
+
+  /* ---------- 초기화 ---------- */
+  loadParticipants();
+  wheelOrder = participants.slice();
+  renderParticipants();
+  drawWheel(wheelOrder);
+})();
+</script>
+
+</body>
+</html>
